@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 
 function WriteDiary() {
@@ -36,6 +36,7 @@ function WriteDiary() {
         className="textarea"
       />
       <button onClick={handleSubmit} className="button">Simpan</button>
+      <Link to="/" className="button">Kembali</Link>
     </main>
   );
 }
