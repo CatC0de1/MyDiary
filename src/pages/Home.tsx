@@ -1,21 +1,30 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
+import "../styles/Home.css";
+
+type DiaryTitle = {
+  title: string;
+  created_at: string;
+};
 
 function Home() {
-  const [titles, setTitles] = useState<string[]>([]);
+  const [titles, setTitles] = useState<DiaryTitle[]>([]);
 
   useEffect(() => {
-    invoke<string[]>("get_diary_titles").then(setTitles);
+    invoke<DiaryTitle[]>("get_diary_titles").then(setTitles);
   }, []);
 
   return (
     <main className="container">
-      <h1>Home</h1>
+      <h1>MyDiary</h1>
+      <Link to="/write" className="button">+ Tulis Bab Baru</Link>
       <ul>
-        {titles.map((title) => (
-          <li key={title}>
-            <Link to={`/page/${encodeURIComponent(title)}`}>{title}</Link>
+        {titles.map((entry) => (
+          <li key={entry.title}>
+            <Link to={`/read/${encodeURIComponent(entry.title)}`}>
+              {entry.title} = {new Date(entry.created_at).toLocaleDateString()}
+            </Link>
           </li>
         ))}
       </ul>

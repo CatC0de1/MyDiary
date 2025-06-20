@@ -1,13 +1,16 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from "./pages/Home";
-import DinamycDiary from "./pages/DinamycDiary";
+import ReadDiary from "./pages/ReadDiary";
+import WriteDiary from './pages/WriteDiary';
+import './styles/global.css';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/page/:title" element={<DinamycDiary />} />
+        <Route path="/write" element={<WriteDiary />} />
+        <Route path="/read/:title" element={<ReadDiary />} />
       </Routes>
     </BrowserRouter>
   )
