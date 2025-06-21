@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
+import Title from "../components/Title";
+import "../styles/ReadDiary.css"
 
 function ReadDiary() {
   const { title } = useParams();
@@ -26,14 +28,14 @@ function ReadDiary() {
   };
 
   return (
-    <main className="container">
-      <h1>{title}</h1>
-      <p>{content}</p>
+    <main className="flex flex-col items-center justify-center p-4">
+      <Title />
+      <h1 className="text-2xl font-bold pt-15 pb-5">{title}</h1>
+      <p className="bg-stone-200 text-stone-900 p-5 rounded-xl border-2 border-black w-[60%] text-justify">{content}</p>
 
-      <div>
-        <button onClick={handleEdit}>Edit</button>
-        <button onClick={handleDelete}>Delete</button>
-        <Link to="/" className="button">Kembali</Link>
+      <div className="fixed right-[5%] top-[5%] flex flex-col justify-center items-center gap-3 w-30">
+        <button onClick={handleEdit} className="button bg-yellow-400 hover:bg-yellow-500">Edit</button>
+        <button onClick={handleDelete} className="button bg-red-600 hover:bg-red-700">Delete</button>
       </div>
     </main>
   );

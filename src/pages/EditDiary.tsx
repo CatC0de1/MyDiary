@@ -22,13 +22,14 @@ function EditDiary() {
   };
 
   return (
-    <main className="container">
-      <h1>Edit: {title}</h1>
+    <main className="flex flex-col items-center justify-center p-4">
+      <h1 className="text-2xl font-bold pt-15 pb-5">Edit "{title}"</h1>
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
+        className="bg-stone-200 text-stone-900 p-5 rounded-xl border-2 border-black w-[60%] text-justify"
       />
-      <div>
+      <div className="fixed right-[5%] top-[5%] flex flex-col justify-center items-center gap-3 w-30 ">
         <button onClick={handleSave}>Simpan</button>
         <button onClick={() => navigate(-1)}>Batal</button>
       </div>  

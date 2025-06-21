@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
+import Title from "../components/Title";
 
 function WriteDiary() {
   const [title, setTitle] = useState("");
@@ -20,23 +21,23 @@ function WriteDiary() {
   };
 
   return (
-    <main className="container">
-      <h1>Tulis Bab Baru</h1>
+    <main className="flex flex-col items-center justify-center p-4 gap-4">
+      <Title />
+      <h1 className="text-2xl font-bold pt-15 pb-5">Tulis Bab Baru</h1>
       <input
         type="text"
         placeholder="Judul Bab"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="input"
+        className="bg-stone-200 text-stone-900 px-5 py-3 rounded-xl border-2 border-black w-[60%] text-justify"
       />
       <textarea
         placeholder="Isi diary ..."
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        className="textarea"
+        className="bg-stone-200 text-stone-900 p-5 rounded-xl border-2 border-black w-[60%] text-justify"
       />
-      <button onClick={handleSubmit} className="button">Simpan</button>
-      <Link to="/" className="button">Kembali</Link>
+      <button onClick={handleSubmit} className="self-end mr-[20%] px-4 py-2 bg-green-600 hover:bg-green-700 transition-colors rounded-lg">Simpan</button>
     </main>
   );
 }

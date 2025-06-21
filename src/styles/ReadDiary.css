@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+.button {
+  @apply w-full rounded-lg p-1 transition-colors;
+}
