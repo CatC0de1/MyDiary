@@ -3,35 +3,48 @@ import { useParams, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 
 function EditDiary() {
-  const { title } = useParams<{ title:string }>();
-  const [content, setContent] = useState("");
+  const { id } = useParams();
+  const diaryId = parseInt(id || "", 10);
+  const [diary, setDiary] = useState<{ title: string, content: string } | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (title) {
-      invoke<string>("get_diary_content", { title }).then(setContent);
+    if (!isNaN(diaryId)) {
+      invoke<{ title: string; content: string }>("get_diary_content", { id: diaryId })
+        .then(setDiary);
     }
-  }, [title]);
+  }, [diaryId]);
 
   const handleSave = async () => {
+    if (!diary) return;
     await invoke("update_diary_entry", {
-      entry: { title, content },
+      entry: { 
+        id: diaryId,
+        title: diary.title,
+        content: diary.content,
+      },
     });
 
-    navigate(`/read/${encodeURIComponent(title || "")}`);
+    navigate(`/read/${diaryId}`);
   };
 
   return (
     <main className="flex flex-col items-center justify-center p-4">
-      <h1 className="text-2xl font-bold pt-15 pb-5">Edit "{title}"</h1>
+      <h1 className="text-2xl font-bold pt-15 pb-5">Edit "{diary?.title}"</h1>
       <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
+        value={diary?.content || ""}
+        onChange={(e) => 
+          setDiary((prev) => prev ? { ...prev, content: e.target.value} : null)
+        }
         className="bg-stone-200 text-stone-900 p-5 rounded-xl border-2 border-black w-[60%] text-justify"
       />
       <div className="fixed right-[5%] top-[5%] flex flex-col justify-center items-center gap-3 w-30 ">
-        <button onClick={handleSave}>Simpan</button>
-        <button onClick={() => navigate(-1)}>Batal</button>
+        <button onClick={handleSave} className="button bg-green-400 hover:bg-green-500">
+          Simpan
+        </button>
+        <button onClick={() => navigate(-1)} className="button bg-red-400 hover:bg-red-500">
+          Batal
+        </button>
       </div>  
     </main>
   );

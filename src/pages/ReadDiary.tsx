@@ -5,33 +5,39 @@ import Title from "../components/Title";
 import "../styles/ReadDiary.css"
 
 function ReadDiary() {
-  const { title } = useParams();
-  const [content, setContent] = useState("");
+  const { id } = useParams();
+  const diaryId = parseInt(id || "", 10);
+  const [diary, setDiary] = useState<{ title: string, content: string } | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (title) {
-      invoke<string>("get_diary_content", { title }).then(setContent)
+    if (!isNaN(diaryId)) {
+      invoke<{ title: string; content: string }>("get_diary_content", { id:diaryId })
+        .then(setDiary)
     }
-  }, [title]);
+  }, [diaryId]);
 
   const handleDelete = async () => {
-    const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus "${title}"?`);
+    const confirmDelete = confirm(`Apakah Anda yakin ingin menghapus "${diary?.title}"?`);
     if (!confirmDelete) return;
 
-    await invoke("delete_diary_entry", { title });
+    await invoke("delete_diary_entry", { id:diaryId });
     navigate("/");
   };
 
   const handleEdit = () => {
-    navigate(`/edit/${encodeURIComponent(title || "")}`);
+    navigate(`/edit/${diaryId}`);
   };
 
   return (
     <main className="flex flex-col items-center justify-center p-4">
       <Title />
-      <h1 className="text-2xl font-bold pt-15 pb-5">{title}</h1>
-      <p className="bg-stone-200 text-stone-900 p-5 rounded-xl border-2 border-black w-[60%] text-justify">{content}</p>
+      <h1 className="text-2xl font-bold pt-15 pb-5">
+        {diary?.title ?? "Memuat . . ."}
+      </h1>
+      <p className="bg-stone-200 text-stone-900 p-5 rounded-xl border-2 border-black w-[60%] text-justify">
+        {diary?.content ?? "Memuat konten . . ."}
+      </p>
 
       <div className="fixed right-[5%] top-[5%] flex flex-col justify-center items-center gap-3 w-30">
         <button onClick={handleEdit} className="button bg-yellow-400 hover:bg-yellow-500">Edit</button>

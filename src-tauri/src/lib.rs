@@ -36,13 +36,26 @@ pub struct NewDiaryEntry {
     pub content: String,
 }
 
+#[derive(Deserialize)]
+pub struct UpdateDiaryEntry {
+    pub id: i32,
+    pub title: String,
+    pub content: String,
+}
+
 // This struct represents a diary entry that will be returned to the frontend
 #[derive(Serialize)]
 pub struct DiaryTitle {
+    pub id: i32,
     pub title: String,
     pub created_at: String,
 }
 
+#[derive(Serialize)]
+pub struct DiaryDetail {
+    pub title: String,
+    pub content: String,
+}
 
 
 fn init_db() -> Connection {
@@ -50,7 +63,8 @@ fn init_db() -> Connection {
     let conn = Connection::open("../data/diary.db").expect("Failed to open DB");
     conn.execute(
         "CREATE TABLE IF NOT EXISTS entries (
-            title TEXT NOT NULL PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
             content TEXT NOT NULL,
             created_at TEXT NOT NULL
         )",
@@ -86,14 +100,15 @@ async fn add_diary_entry(entry: NewDiaryEntry, state: State<'_, DbState>) -> Res
 async fn get_diary_titles(state: State<'_, DbState>) -> Result<Vec<DiaryTitle>, String> {
     let conn = state.conn.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT title, created_at FROM entries ORDER BY created_at DESC")
+        .prepare("SELECT id, title, created_at FROM entries ORDER BY created_at DESC")
         .map_err(|e| e.to_string())?;
 
     let result = stmt
         .query_map([], |row| {
             Ok(DiaryTitle {
-                title: row.get(0)?,
-                created_at: row.get(1)?,
+                id: row.get(0)?,
+                title: row.get(1)?,
+                created_at: row.get(2)?,
             })
         })
         .map_err(|e| e.to_string())?
@@ -104,27 +119,28 @@ async fn get_diary_titles(state: State<'_, DbState>) -> Result<Vec<DiaryTitle>, 
 }
 
 #[tauri::command]
-async fn get_diary_content(title: String, state: State<'_, DbState>) -> Result<String, String> {
+async fn get_diary_content(id: i32, state: State<'_, DbState>) -> Result<DiaryDetail, String> {
     let conn = state.conn.lock().unwrap();
     let mut stmt = conn
-        .prepare("SELECT content FROM entries WHERE title = ?1")
+        .prepare("SELECT title, content FROM entries WHERE id = ?1")
         .map_err(|e| e.to_string())?;
-    // let content: String = stmt
-    //     .query_row(params![title], |row| row.get(0))
-    //     .map_err(|e| e.to_string())?;
-    // Ok(content)
     
-    let enc_content: String = stmt.query_row([title], |row| row.get(0)).map_err(|e| e.to_string())?;
+    let ( title, enc_content ): (String, String ) = 
+        stmt.query_row([id], |row| Ok((row.get(0)?, row.get(1)?)))
+            .map_err(|e| e.to_string())?;
     
     let secret_key = env::var("SECRET_KEY").map_err(|e| e.to_string())?;
     let key_bytes: [u8; 32] = secret_key.as_bytes().try_into().map_err(|_| "SECRET_KEY must be 32 bytes long")?;
     let decrypted_content = decrypt(&key_bytes, &enc_content).map_err(|e| e.to_string())?;
 
-    Ok(decrypted_content)
+    Ok(DiaryDetail {
+        title,
+        content: decrypted_content,
+    })
 }
 
 #[tauri::command]
-async fn update_diary_entry(entry: NewDiaryEntry, state: State<'_, DbState>) -> Result<(), String> {
+async fn update_diary_entry(entry: UpdateDiaryEntry, state: State<'_, DbState>) -> Result<(), String> {
     let conn = state.conn.lock().unwrap();
 
     let secret_key = env::var("SECRET_KEY").map_err(|e| e.to_string())?;
@@ -134,8 +150,8 @@ async fn update_diary_entry(entry: NewDiaryEntry, state: State<'_, DbState>) -> 
     let encrypted_content = encrypt(&key_bytes, &entry.content).map_err(|e| e.to_string())?;
 
     conn.execute(
-        "UPDATE entries SET content = ?1 WHERE title = ?2",
-        params![encrypted_content, entry.title],
+        "UPDATE entries SET content = ?1, title = ?2 WHERE id = ?3",
+        params![encrypted_content, entry.title, entry.id],
     )
     .map_err(|e| e.to_string())?;
 
@@ -143,12 +159,12 @@ async fn update_diary_entry(entry: NewDiaryEntry, state: State<'_, DbState>) -> 
 }
 
 #[tauri::command]
-async fn delete_diary_entry(title: String, state: State<'_, DbState>) -> Result<(), String> {
+async fn delete_diary_entry(id: i32, state: State<'_, DbState>) -> Result<(), String> {
     let conn = state.conn.lock().unwrap();
 
     conn.execute(
-        "DELETE FROM entries WHERE title = ?1",
-        params![title],
+        "DELETE FROM entries WHERE id = ?1",
+        params![id],
     )
     .map_err(|e| e.to_string())?;
 
