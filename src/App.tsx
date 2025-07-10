@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from "./pages/Home";
 import ReadDiary from "./pages/ReadDiary";
 import WriteDiary from './pages/WriteDiary';
-import EditDiary from './pages/EditDiary';
+import EditDiaryContent from './pages/EditDiaryContent';
 import './styles/global.css';
 
 function App() {
@@ -12,7 +12,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/write" element={<WriteDiary />} />
         <Route path="/read/:id" element={<ReadDiary />} />
-        <Route path="/edit/:id" element={<EditDiary />} />
+        <Route path="/edit/:id" element={<EditDiaryContent />} />
       </Routes>
     </BrowserRouter>
   )

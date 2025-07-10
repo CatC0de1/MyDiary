@@ -18,7 +18,7 @@ mod crypto;
 use std::sync::Mutex;
 use tauri::State;
 use rusqlite::{Connection, params};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use chrono::Utc;
 use dotenvy::dotenv;
 use std::env;
@@ -81,12 +81,12 @@ async fn add_diary_entry(entry: NewDiaryEntry, state: State<'_, DbState>) -> Res
     let secret_key = env::var("SECRET_KEY").map_err(|e| e.to_string())?;
     let key_bytes: [u8; 32] = secret_key.as_bytes().try_into().map_err(|_| "SECRET_KEY must be 32 bytes long")?;
 
-    // let encrypted_title = encrypt(SECRET_KEY, &entry.title).map_err(|e| e.to_string())?;
+    let encrypted_title = encrypt(&key_bytes, &entry.title).map_err(|e| e.to_string())?;
     let encrypted_content = encrypt(&key_bytes, &entry.content).map_err(|e| e.to_string())?;
 
     conn.execute(
         "INSERT OR REPLACE INTO entries (title, content, created_at) VALUES (?1, ?2, ?3)",
-        params![entry.title, encrypted_content, created_at],
+        params![encrypted_title, encrypted_content, created_at],
     )
     .map_err(|e| {
         println!("Error insert diary: {}", e);
@@ -103,12 +103,24 @@ async fn get_diary_titles(state: State<'_, DbState>) -> Result<Vec<DiaryTitle>, 
         .prepare("SELECT id, title, created_at FROM entries ORDER BY created_at DESC")
         .map_err(|e| e.to_string())?;
 
+    let secret_key = env::var("SECRET_KEY").map_err(|e| e.to_string())?;
+    let key_bytes: [u8; 32] = secret_key.as_bytes().try_into().map_err(|_| "SECRET_KEY must be 32 bytes long")?;
+    // let decrypted_title = decrypt(&key_bytes, &enc_title).map_err(|e| e.to_string())?;
+
     let result = stmt
         .query_map([], |row| {
+            let id: i32 = row.get(0)?;
+            let enc_title: String = row.get(1)?;
+            let created_at: String = row.get(2)?;
+
+            let decrypted_title = 
+                decrypt(&key_bytes, &enc_title)
+                .unwrap_or_else(|_| "Decryption failed".to_string());
+
             Ok(DiaryTitle {
-                id: row.get(0)?,
-                title: row.get(1)?,
-                created_at: row.get(2)?,
+                id,
+                title: decrypted_title,
+                created_at,
             })
         })
         .map_err(|e| e.to_string())?
@@ -125,33 +137,52 @@ async fn get_diary_content(id: i32, state: State<'_, DbState>) -> Result<DiaryDe
         .prepare("SELECT title, content FROM entries WHERE id = ?1")
         .map_err(|e| e.to_string())?;
     
-    let ( title, enc_content ): (String, String ) = 
+    let ( enc_title, enc_content ): (String, String ) = 
         stmt.query_row([id], |row| Ok((row.get(0)?, row.get(1)?)))
             .map_err(|e| e.to_string())?;
     
     let secret_key = env::var("SECRET_KEY").map_err(|e| e.to_string())?;
     let key_bytes: [u8; 32] = secret_key.as_bytes().try_into().map_err(|_| "SECRET_KEY must be 32 bytes long")?;
+    
+    let decrypted_title = decrypt(&key_bytes, &enc_title).map_err(|e| e.to_string())?;
     let decrypted_content = decrypt(&key_bytes, &enc_content).map_err(|e| e.to_string())?;
 
     Ok(DiaryDetail {
-        title,
+        title: decrypted_title,
         content: decrypted_content,
     })
 }
 
 #[tauri::command]
-async fn update_diary_entry(entry: UpdateDiaryEntry, state: State<'_, DbState>) -> Result<(), String> {
+async fn update_diary_title(id: i32, new_title: String, state: State<'_, DbState>) -> Result<(), String> {
+    let conn = state.conn.lock().unwrap();
+
+    let secret_key = env::var("SECRET_KEY").map_err(|e| e.to_string())?;
+    let key_bytes: [u8; 32] = secret_key.as_bytes().try_into().map_err(|_| "SECRET_KEY must be 32 bytes long")?;
+    let encrypted_title = encrypt(&key_bytes, &new_title).map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "UPDATE entries SET title = ?1 WHERE id = ?2",
+        params![encrypted_title, id],
+    )
+    .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn update_diary_content(entry: UpdateDiaryEntry, state: State<'_, DbState>) -> Result<(), String> {
     let conn = state.conn.lock().unwrap();
 
     let secret_key = env::var("SECRET_KEY").map_err(|e| e.to_string())?;
     let key_bytes: [u8; 32] = secret_key.as_bytes().try_into().map_err(|_| "SECRET_KEY must be 32 bytes long")?;
 
-    // let encrypted_title = encrypt(SECRET_KEY, &entry.title).map_err(|e| e.to_string())?;
+    let encrypted_title = encrypt(&key_bytes, &entry.title).map_err(|e| e.to_string())?;
     let encrypted_content = encrypt(&key_bytes, &entry.content).map_err(|e| e.to_string())?;
 
     conn.execute(
         "UPDATE entries SET content = ?1, title = ?2 WHERE id = ?3",
-        params![encrypted_content, entry.title, entry.id],
+        params![encrypted_content, encrypted_title, entry.id],
     )
     .map_err(|e| e.to_string())?;
 
@@ -185,7 +216,8 @@ pub fn run() {
             add_diary_entry,
             get_diary_titles,
             get_diary_content,
-            update_diary_entry,
+            update_diary_title,
+            update_diary_content,
             delete_diary_entry
         ])
         .run(tauri::generate_context!())

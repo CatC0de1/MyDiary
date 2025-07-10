@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import Title from "../components/Title";
+import EditDiaryTitle from "../components/EditDiaryTitle";
 import "../styles/ReadDiary.css"
 
 function ReadDiary() {
   const { id } = useParams();
   const diaryId = parseInt(id || "", 10);
   const [diary, setDiary] = useState<{ title: string, content: string } | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -40,9 +42,18 @@ function ReadDiary() {
       </p>
 
       <div className="fixed right-[5%] top-[5%] flex flex-col justify-center items-center gap-3 w-30">
-        <button onClick={handleEdit} className="button bg-yellow-400 hover:bg-yellow-500">Edit</button>
+        <button onClick={handleEdit} className="button bg-yellow-400 hover:bg-yellow-500">Edit Content</button>
+        <button onClick={() => setIsModalOpen(true)} className="button bg-yellow-400 hover:bg-yellow-500">Edit Title</button>
         <button onClick={handleDelete} className="button bg-red-600 hover:bg-red-700">Delete</button>
       </div>
+
+      <EditDiaryTitle
+        id={diaryId}
+        currentTitle={diary?.title || ""}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={(newTitle) => setDiary((prev) => prev && { ...prev, title: newTitle })}
+      />
     </main>
   );
 }

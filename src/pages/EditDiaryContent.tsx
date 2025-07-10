@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 
-function EditDiary() {
+function EditDiaryContent() {
   const { id } = useParams();
   const diaryId = parseInt(id || "", 10);
   const [diary, setDiary] = useState<{ title: string, content: string } | null>(null);
@@ -17,7 +17,7 @@ function EditDiary() {
 
   const handleSave = async () => {
     if (!diary) return;
-    await invoke("update_diary_entry", {
+    await invoke("update_diary_content", {
       entry: { 
         id: diaryId,
         title: diary.title,
@@ -50,4 +50,4 @@ function EditDiary() {
   );
 }
 
-export default EditDiary;
+export default EditDiaryContent;
