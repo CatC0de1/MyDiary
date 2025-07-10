@@ -1,6 +1,6 @@
 use sha2::{Sha256, Digest};
 use std::env;
-use dotenvy::dotenv;
+// use dotenvy::dotenv;
 
 pub fn hash_password(input: &str) -> String {
     let mut hasher = Sha256::new();

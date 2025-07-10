@@ -1,11 +1,8 @@
 use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
-use aes_gcm::aead::{Aead, OsRng, generic_array::GenericArray};
+use aes_gcm::aead::{Aead, generic_array::GenericArray};
 use base64::{engine::general_purpose, Engine};
 
 const NONCE_SIZE: usize = 12; // AES-GCM standard nonce size
-
-// key 32 byte (265 bit)
-// pub const SECRET_KEY: &[u8] = b"01234567890123456789012345678901"; // Example key
 
 pub fn encrypt(key: &[u8; 32], plaintext: &str) -> Result<String, String> {
     let cipher = Aes256Gcm::new(GenericArray::from_slice(key));
