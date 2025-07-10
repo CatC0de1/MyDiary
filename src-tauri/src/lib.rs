@@ -23,6 +23,7 @@ use chrono::Utc;
 use dotenvy::dotenv;
 use std::env;
 use crypto::{encrypt, decrypt};
+mod auth;
 
 // #[derive(Default)]
 pub struct DbState {
@@ -213,6 +214,7 @@ pub fn run() {
             conn: Mutex::new(init_db()),
         })
         .invoke_handler(tauri::generate_handler![
+            auth::verify_password,
             add_diary_entry,
             get_diary_titles,
             get_diary_content,
