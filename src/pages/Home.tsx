@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
-import "../styles/Home.css";
+import FormattedDate from "../components/FormattedDate";
 
 type DiaryTitle = {
   id: number;
   title: string;
   created_at: string;
+  last_updated: string;
 };
 
 function Home() {
@@ -31,9 +32,20 @@ function Home() {
                   <h2 className="text-xl font-bold">
                     {entry.title}
                   </h2>
-                  <h2 className="text-sm text-gray-300 self-end">
-                    {new Date(entry.created_at).toLocaleDateString()}
-                  </h2>
+                  <div className="self-end flex flex-col gap-2 text-sm text-gray-300">
+                    <div className="flex flex-row justify-between gap-2">
+                      <p className="">Created at:</p>
+                      <p className="">
+                        <FormattedDate isoString={entry.created_at} timeZone="Asia/Tokyo" />
+                      </p>
+                    </div>
+                    <div className="flex flex-row justify-between gap-2">
+                      <p className="">Last updated:</p>
+                      <p className="">
+                        <FormattedDate isoString={entry.last_updated} timeZone="Asia/Tokyo" />
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </Link>
             </li>

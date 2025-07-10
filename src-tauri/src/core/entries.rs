@@ -27,8 +27,8 @@ pub async fn add_diary_entry(entry: NewDiaryEntry, state: State<'_, DbState>) ->
   let encrypted_content = encrypt(&key, &entry.content).map_err(|e| e.to_string())?;
 
   conn.execute(
-    "INSERT OR REPLACE INTO entries (title, content, created_at) VALUES (?1, ?2, ?3)",
-    params![encrypted_title, encrypted_content, created_at]
+    "INSERT OR REPLACE INTO entries (title, content, created_at, last_updated) VALUES (?1, ?2, ?3, ?4)",
+    params![encrypted_title, encrypted_content, created_at, created_at]
   )
   .map_err(|e| e.to_string())?;
 
@@ -39,7 +39,7 @@ pub async fn add_diary_entry(entry: NewDiaryEntry, state: State<'_, DbState>) ->
 pub async fn get_diary_titles(state: State<'_, DbState>) -> Result<Vec<DiaryTitle>, String> {
   let conn = state.conn.lock().unwrap();
   let mut stmt = conn
-    .prepare("SELECT id, title, created_at FROM entries ORDER BY created_at DESC")
+    .prepare("SELECT id, title, created_at, last_updated FROM entries ORDER BY created_at DESC")
     .map_err(|e| e.to_string())?;
 
   let key = get_key()?;
@@ -49,6 +49,7 @@ pub async fn get_diary_titles(state: State<'_, DbState>) -> Result<Vec<DiaryTitl
       let id: i32 = row.get(0)?;
       let enc_title: String = row.get(1)?;
       let created_at: String = row.get(2)?;
+      let last_updated: String = row.get(3)?;
 
       let decrypted_title = 
         decrypt(&key, &enc_title)
@@ -58,6 +59,7 @@ pub async fn get_diary_titles(state: State<'_, DbState>) -> Result<Vec<DiaryTitl
         id,
         title: decrypted_title,
         created_at,
+        last_updated,
       })
     })
     .map_err(|e| e.to_string())?
@@ -71,11 +73,18 @@ pub async fn get_diary_titles(state: State<'_, DbState>) -> Result<Vec<DiaryTitl
 pub async fn get_diary_content(id: i32, state: State<'_, DbState>) -> Result<DiaryDetail, String> {
   let conn = state.conn.lock().unwrap();
   let mut stmt = conn
-    .prepare("SELECT title, content FROM entries WHERE id = ?1")
+    .prepare("SELECT title, content, created_at, last_updated FROM entries WHERE id = ?1")
     .map_err(|e| e.to_string())?;
     
-  let ( enc_title, enc_content ): (String, String ) = stmt
-    .query_row([id], |row| Ok((row.get(0)?, row.get(1)?)))
+  let ( enc_title, enc_content, created_at, last_updated ): (String, String, String, String ) = stmt
+    .query_row([id], |row| {
+      Ok((
+        row.get(0)?,
+        row.get(1)?,
+        row.get(2)?,
+        row.get(3)?,
+      ))
+    })
     .map_err(|e| e.to_string())?;
     
   let key = get_key()?;
@@ -85,19 +94,22 @@ pub async fn get_diary_content(id: i32, state: State<'_, DbState>) -> Result<Dia
   Ok(DiaryDetail {
     title: decrypted_title,
     content: decrypted_content,
+    created_at,
+    last_updated,
   })
 }
 
 #[tauri::command]
 pub async fn update_diary_title(id: i32, new_title: String, state: State<'_, DbState>) -> Result<(), String> {
   let conn = state.conn.lock().unwrap();
+  let last_updated = Utc::now().to_rfc3339(); 
 
   let key = get_key()?;
   let encrypted_title = encrypt(&key, &new_title).map_err(|e| e.to_string())?;
 
   conn.execute(
-    "UPDATE entries SET title = ?1 WHERE id = ?2",
-    params![encrypted_title, id],
+    "UPDATE entries SET title = ?1, last_updated = ?2 WHERE id = ?3",
+    params![encrypted_title, last_updated, id],
   )
   .map_err(|e| e.to_string())?;
 
@@ -107,14 +119,15 @@ pub async fn update_diary_title(id: i32, new_title: String, state: State<'_, DbS
 #[tauri::command]
 pub async fn update_diary_content(entry: UpdateDiaryEntry, state: State<'_, DbState>) -> Result<(), String> {
   let conn = state.conn.lock().unwrap();
+  let last_updated = Utc::now().to_rfc3339(); 
 
   let key = get_key()?;
   let encrypted_title = encrypt(&key, &entry.title).map_err(|e| e.to_string())?;
   let encrypted_content = encrypt(&key, &entry.content).map_err(|e| e.to_string())?;
 
   conn.execute(
-    "UPDATE entries SET content = ?1, title = ?2 WHERE id = ?3",
-    params![encrypted_content, encrypted_title, entry.id],
+    "UPDATE entries SET content = ?1, title = ?2, last_updated = ?3 WHERE id = ?4",
+    params![encrypted_content, encrypted_title, last_updated, entry.id],
   )
   .map_err(|e| e.to_string())?;
 

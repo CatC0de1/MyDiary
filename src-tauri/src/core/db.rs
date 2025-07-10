@@ -14,7 +14,8 @@ impl DbState {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         content TEXT NOT NULL,
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        last_updated TEXT NOT NULL
       )",
       [],
     ).expect("Failed to create table");

@@ -3,18 +3,26 @@ import { useParams, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import Title from "../components/Title";
 import EditDiaryTitle from "../components/EditDiaryTitle";
+import FormattedDate from "../components/FormattedDate";
 import "../styles/ReadDiary.css"
+
+type DiaryDetail = {
+  title: string;
+  content: string;
+  created_at: string;
+  last_updated: string;
+}
 
 function ReadDiary() {
   const { id } = useParams();
   const diaryId = parseInt(id || "", 10);
-  const [diary, setDiary] = useState<{ title: string, content: string } | null>(null);
+  const [diary, setDiary] = useState<DiaryDetail | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isNaN(diaryId)) {
-      invoke<{ title: string; content: string }>("get_diary_content", { id:diaryId })
+      invoke<DiaryDetail>("get_diary_content", { id:diaryId })
         .then(setDiary)
     }
   }, [diaryId]);
@@ -34,9 +42,13 @@ function ReadDiary() {
   return (
     <main className="flex flex-col items-center justify-center p-4">
       <Title />
-      <h1 className="text-2xl font-bold pt-15 pb-5">
+      <h1 className="text-2xl font-bold pt-15 pb-3">
         {diary?.title ?? "Memuat . . ."}
       </h1>
+      <span className="flex flex-col gap-1 pb-5 text-sm">
+        <h2>Created at : <FormattedDate isoString={diary?.created_at ?? ""} timeZone="Asia/Tokyo" /></h2>
+        <h2>Last Updated : <FormattedDate isoString={diary?.last_updated ?? ""} timeZone="Asia/Tokyo" /></h2>
+      </span>
       <p className="bg-stone-200 text-stone-900 p-5 rounded-xl border-2 border-black w-[60%] text-justify">
         {diary?.content ?? "Memuat konten . . ."}
       </p>

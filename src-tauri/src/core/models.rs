@@ -20,10 +20,13 @@ pub struct DiaryTitle {
   pub id: i32,
   pub title: String,
   pub created_at: String,
+  pub last_updated: String,
 }
 
 #[derive(Serialize)]
 pub struct DiaryDetail {
   pub title: String,
   pub content: String,
+  pub created_at: String,
+  pub last_updated: String,
 }
