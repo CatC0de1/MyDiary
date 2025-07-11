@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import FormattedDate from "../components/FormattedDate";
+import DynamicTitle from "../components/DynamicTitle";
 
 type DiaryTitle = {
   id: number;
@@ -19,6 +20,7 @@ function Home() {
 
   return (
     <main className="flex justify-center items-center flex-col">
+      <DynamicTitle title={null} />
       <h1 className="my-[5%] text-4xl">MyDiary</h1>
       <ul className="flex flex-col items-center justify-center w-[85%]">
 

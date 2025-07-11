@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import Title from "../components/Title";
+import DynamicTitle from "../components/DynamicTitle";
 
 function WriteDiary() {
   const [title, setTitle] = useState("");
@@ -22,6 +23,7 @@ function WriteDiary() {
 
   return (
     <main className="flex flex-col items-center justify-center p-4 gap-4">
+      <DynamicTitle title={"New Diary"} />
       <Title />
       <h1 className="text-2xl font-bold pt-15 pb-5">Tulis Bab Baru</h1>
       <input

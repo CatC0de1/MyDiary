@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 
+import DynamicTitle from "../components/DynamicTitle";
+
 function EditDiaryContent() {
   const { id } = useParams();
   const diaryId = parseInt(id || "", 10);
@@ -30,6 +32,7 @@ function EditDiaryContent() {
 
   return (
     <main className="flex flex-col items-center justify-center p-4">
+      <DynamicTitle title={diary?.title} />
       <h1 className="text-2xl font-bold pt-15 pb-5">Edit "{diary?.title}"</h1>
       <textarea
         value={diary?.content || ""}

@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import Title from "../components/Title";
 import EditDiaryTitle from "../components/EditDiaryTitle";
 import FormattedDate from "../components/FormattedDate";
+import DynamicTitle from "../components/DynamicTitle";
 import "../styles/ReadDiary.css"
 
 type DiaryDetail = {
@@ -41,6 +42,7 @@ function ReadDiary() {
 
   return (
     <main className="flex flex-col items-center justify-center p-4">
+      {diary && diary.title && <DynamicTitle title={diary.title} />}
       <Title />
       <h1 className="text-2xl font-bold pt-15 pb-3">
         {diary?.title ?? "Memuat . . ."}

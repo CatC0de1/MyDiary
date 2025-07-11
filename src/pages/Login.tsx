@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { invoke } from '@tauri-apps/api/core';
 import { useAuth } from '../context/AuthContext';
+import DynamicTitle from '../components/DynamicTitle';
 
 function Login() {
   const [password, setPassword] = useState('');
@@ -26,6 +27,7 @@ function Login() {
 
   return (
     <main className="flex flex-col items-center justify-center h-screen">
+      <DynamicTitle title={"Login"} />
       <h1 className="text-3xl font-bold mb-6">
         Masukkan Password
       </h1>
